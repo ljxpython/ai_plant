@@ -7,8 +7,8 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.chat_engine import SimpleChatEngine
 from llama_index.core.chat_engine.types import ChatMode
 from llama_index.core.memory import ChatMemoryBuffer
-from rag.document import DocumentRAGV1, BaseRAG, DocumentRAGV2
-import utils.utils_ui as ui_utils
+from rag.document import DocumentRAGV1,BaseRAG
+import chainlit.data as cl_data
 
 # 初始化聊天记录存储持久层
 from utils import settings
@@ -35,7 +35,7 @@ async def view_pdf(elements: List[ElementBased]):
 async def start():
     kb_name = cl.user_session.get("chat_profile")
     # 选择默认知识库，是与大模型直接对话
-    if kb_name is None or kb_name == "default" or kb_name == "大模型对话" or kb_name == "数据库对话":
+    if kb_name is None or kb_name == "default" or kb_name == "大模型对话":
         memory = ChatMemoryBuffer.from_defaults(token_limit=1024)
         chat_engine = SimpleChatEngine.from_defaults(memory=memory)
     else:
@@ -54,11 +54,6 @@ async def chat_profile(current_user: cl.User):
             name="default",
             markdown_description=f"大模型对话",
             icon=f"/public/kbs/model.png",
-        ),
-        cl.ChatProfile(
-            name="数据库对话",
-            markdown_description=f"数据库对话",
-            icon=f"/public/kbs/db.jpg",
         )
     ]
     for kb_name in kb_list:
@@ -127,34 +122,13 @@ async def main(message: cl.Message):
                 files.append(element.path)
 
         if len(files) > 0:
-            rag = DocumentRAGV2(files=files)
+            rag = DocumentRAGV1(files=files)
             index = await rag.create_local_index()
-            chat_engine = index.as_chat_engine(chat_mode=ChatMode.CONTEXT, similarity_top_k=3)
+            chat_engine = index.as_chat_engine(chat_mode=ChatMode.CONTEXT, similarity_top_k=10)
             cl.user_session.set("chat_engine", chat_engine)
-    elif chat_mode == "数据库对话":
-        # await ui_utils.train()
-        sql = await ui_utils.generate_sql(message.content)
-        is_valid = await ui_utils.is_sql_valid(sql)
-        if is_valid:
-            df = await ui_utils.execute_query(sql)
-            # 展示数据表格
-            await cl.Message(content=df.to_markdown(index=False), author="Assistant").send()
-
-            fig = await ui_utils.plot(human_query=message.content, sql=sql, df=df)
-            elements = [cl.Plotly(name="chart", figure=fig, display="inline")]
-            await cl.Message(content="生成的图表如下：", elements=elements, author="Assistant").send()
-            return
 
     chat_engine = cl.user_session.get("chat_engine")
     res = await cl.make_async(chat_engine.stream_chat)(message.content)
-
-    # 显示图片
-    for source_node in res.source_nodes:
-        if source_node.metadata.get("type") == "image":
-            msg.elements.append(
-                cl.Image(path=source_node.metadata["image"],
-                         name=source_node.metadata["source"],
-                         display="inline"))
 
     # 流式界面输出
     for token in res.response_gen:

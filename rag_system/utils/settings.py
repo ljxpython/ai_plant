@@ -59,7 +59,7 @@ def local_bge_small_embed_model(**kwargs):
     #终端执行： pip install llama-index-embeddings-huggingface llama-index-embeddings-instructor
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding
     embed_model = HuggingFaceEmbedding(model_name=configuration.local_embedding_model_name,
-                                       cache_folder=r"C:\Users\86134\.cache\huggingface\hub",
+                                       # cache_folder=r"C:\Users\86134\.cache\huggingface\hub",
                                        **kwargs)
     return embed_model
 
