@@ -45,6 +45,7 @@ class BaseRAG:
         # 加载数据
         data = await self.load_data()
         # 创建一个句子分割器
+        # chunk_size = 512  这个值需要和你向量数据库的值保持一致，至于你向量数据库的值地多少，自己查一下
         node_parser = SentenceSplitter.from_defaults(chunk_size=512)
         # 从文档中获取节点
         nodes = node_parser.get_nodes_from_documents(data)
@@ -60,6 +61,7 @@ class BaseRAG:
 
     @staticmethod
     async def load_remote_index(collection_name="default") -> BaseIndex:
+        # 这里 overwrite=False ,因为true的话，就会把之前的删掉
         vector_store = MilvusVectorStore(
             uri=settings.configuration.milvus_uri,
             collection_name=collection_name, dim=settings.configuration.embedding_model_dim, overwrite=False

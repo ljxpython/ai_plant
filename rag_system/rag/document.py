@@ -16,6 +16,9 @@ class DocumentRAGV1(BaseRAG):
         加载数据，该函数需要优化文件内容的识别、清洗
         :return:
         """
+        # 最简单的加载数据
+        # docs = SimpleDirectoryReader(input_files=self.files).load_data()
+
         docs = []
         for file in self.files:
             # 对图片及文档通过Moonshot大模型进行OCR识别
