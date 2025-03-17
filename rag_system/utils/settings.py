@@ -8,7 +8,7 @@
 
 from typing import Dict
 from llama_index.llms.openai import OpenAI as LLamaIndexOpenAI
-# from pymilvus import model
+from pymilvus import model
 
 from .config import Configuration
 from openai import OpenAI
